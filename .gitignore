@@ -1,0 +1,15 @@
+node_modules/
+dist/
+dist-check/
+dist-check-2/
+dist-check-live/
+dist-check-real/
+dist-check-stepfix/
+vite.out.log
+vite.err.log
+server.out.log
+server.err.log
+server.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
