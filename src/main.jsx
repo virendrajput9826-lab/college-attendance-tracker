@@ -72,6 +72,9 @@ const extractionSteps = [
 ];
 
 const todayISO = () => format(new Date(), 'yyyy-MM-dd');
+const isStaticDemo =
+  import.meta.env.VITE_STATIC_DEMO === 'true' ||
+  (typeof window !== 'undefined' && window.location.hostname.endsWith('github.io'));
 
 const seedState = {
   profile: {
@@ -642,6 +645,117 @@ function TimetableView({ state, updateState, sessions }) {
 }
 
 async function runExtraction(profile) {
+  if (isStaticDemo) {
+    const start = format(addDays(new Date(), 12), 'yyyy-MM-dd');
+    const end = format(addDays(new Date(), 112), 'yyyy-MM-dd');
+    const branch = profile.branch || 'Department';
+    const semester = profile.semester || 'Current semester';
+    const section = profile.section ? `Section ${profile.section}` : 'Selected section';
+
+    return {
+      discoveredSources: [
+        {
+          id: 'demo-official',
+          label: `${profile.collegeName} official website`,
+          detail: `${branch} ${semester} timetable source`,
+          confidence: 91,
+          url: 'Static demo source'
+        },
+        {
+          id: 'demo-department',
+          label: `${branch} department notice board`,
+          detail: 'Department timetable notice',
+          confidence: 87,
+          url: 'Static demo source'
+        },
+        {
+          id: 'demo-calendar',
+          label: `${profile.collegeName} academic calendar`,
+          detail: 'Semester dates and holidays',
+          confidence: 84,
+          url: 'Static demo source'
+        }
+      ],
+      rankedCandidates: [
+        {
+          type: 'Timetable',
+          title: `${branch} ${semester} ${section} timetable`,
+          source: 'Static demo source',
+          confidence: 89
+        },
+        {
+          type: 'Calendar',
+          title: `${semester} academic calendar`,
+          source: 'Static demo source',
+          confidence: 84
+        }
+      ],
+      candidate: {
+        confidence: 86,
+        sources: [
+          {
+            type: 'Timetable',
+            title: `${branch} ${semester} ${section} timetable`,
+            source: 'Static demo source',
+            confidence: 89
+          },
+          {
+            type: 'Calendar',
+            title: `${semester} academic calendar`,
+            source: 'Static demo source',
+            confidence: 84
+          }
+        ],
+        calendar: {
+          semesterStart: start,
+          semesterEnd: end
+        },
+        holidays: [
+          { id: crypto.randomUUID(), date: format(addDays(new Date(), 28), 'yyyy-MM-dd'), reason: 'Academic holiday' },
+          { id: crypto.randomUUID(), date: format(addDays(new Date(), 49), 'yyyy-MM-dd'), reason: 'Festival break' }
+        ],
+        slots: [
+          {
+            id: crypto.randomUUID(),
+            weekday: 'Monday',
+            startTime: '09:00',
+            endTime: '10:00',
+            subject: `${branch} Mathematics`,
+            faculty: '',
+            room: 'A-204',
+            slotType: 'lecture',
+            activeFrom: start,
+            activeTo: ''
+          },
+          {
+            id: crypto.randomUUID(),
+            weekday: 'Monday',
+            startTime: '10:00',
+            endTime: '11:00',
+            subject: `${branch} Core`,
+            faculty: '',
+            room: 'B-112',
+            slotType: 'lecture',
+            activeFrom: start,
+            activeTo: ''
+          },
+          {
+            id: crypto.randomUUID(),
+            weekday: 'Wednesday',
+            startTime: '14:00',
+            endTime: '16:00',
+            subject: `${branch} Lab`,
+            faculty: '',
+            room: 'Lab 2',
+            slotType: 'lab',
+            activeFrom: start,
+            activeTo: ''
+          }
+        ]
+      }
+    };
+  }
+
   const response = await fetch('http://localhost:4174/api/extract', {
     method: 'POST',
     headers: {
@@ -692,7 +806,11 @@ function SetupView({ state, updateState, setActiveTab }) {
     setSourceCandidates([]);
     setRankedCandidates([]);
     setActivityFeed([`Started extraction for ${profile.collegeName}, ${profile.branch}, ${profile.semester}.`]);
-    setModeMessage('Searching live sources now. The app will fetch real pages and stop at review before generating lectures.');
+    setModeMessage(
+      isStaticDemo
+        ? 'Running static demo extraction for GitHub Pages. Review stays fully interactive.'
+        : 'Searching live sources now. The app will fetch real pages and stop at review before generating lectures.'
+    );
     setRunId((current) => current + 1);
   };
 
@@ -763,7 +881,11 @@ function SetupView({ state, updateState, setActiveTab }) {
           ...current,
           'Review is ready. Confirm the extracted timetable and semester calendar before generating lecture sessions.'
         ]);
-        setModeMessage('Live extraction finished. Review the fetched result before the app generates your lecture sessions.');
+        setModeMessage(
+          isStaticDemo
+            ? 'Static demo extraction finished. Review the demo result before generating lecture sessions.'
+            : 'Live extraction finished. Review the fetched result before the app generates your lecture sessions.'
+        );
         setIsExtracting(false);
         setActiveStepKey('');
       } catch (error) {
@@ -808,7 +930,11 @@ function SetupView({ state, updateState, setActiveTab }) {
       <ScreenHeader
         eyebrow="Initial setup"
         title="Find your class structure"
-        subtitle="The app can run the full extraction flow on its own, then stop for review before any lectures are generated."
+        subtitle={
+          isStaticDemo
+            ? 'This public GitHub Pages build runs a static demo flow so anyone can open and try the tracker.'
+            : 'The app can run the full extraction flow on its own, then stop for review before any lectures are generated.'
+        }
       />
 
       <div className="two-column">

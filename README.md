@@ -75,9 +75,21 @@ Open:
 - App: `http://127.0.0.1:5173/`
 - Extraction API: `http://localhost:4174/api/extract`
 
+## GitHub Pages Demo
+
+This repo also supports a static public demo on GitHub Pages.
+
+- The Pages build does not run the Node extraction backend
+- It uses a built-in demo extraction response so anyone can open the tracker UI
+- The attendance flow, timetable review, lecture generation, and dashboard remain interactive
+
+Expected Pages URL:
+
+- `https://virendrajput9826-lab.github.io/college-attendance-tracker/`
+
 ## Current Behavior
 
-The app performs real web fetching through the backend. It does not rely only on mocked UI steps anymore.
+The local app performs real web fetching through the backend. It does not rely only on mocked UI steps anymore.
 
 Current extraction flow:
 
@@ -86,6 +98,12 @@ Current extraction flow:
 3. Rank sources
 4. Extract timetable slots, semester dates, and holidays
 5. Ask the user to review before generating lecture sessions
+
+For GitHub Pages only:
+
+1. The app switches to static demo mode
+2. It shows a demo extraction result instead of calling the backend
+3. This keeps the public link usable without a server
 
 ## Current Limitations
 
