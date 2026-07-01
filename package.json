@@ -10,15 +10,20 @@
     "preview": "vite preview --host 127.0.0.1"
   },
   "dependencies": {
+    "@upstash/ratelimit": "^2.0.7",
+    "@upstash/redis": "^1.35.3",
     "@vitejs/plugin-react": "6.0.2",
     "cheerio": "^1.1.2",
+    "dexie": "^4.2.0",
     "lucide-react": "1.21.0",
     "date-fns": "4.4.0",
     "express": "^5.1.0",
     "pdf-parse": "^2.4.5",
     "react": "19.2.7",
     "react-dom": "19.2.7",
-    "vite": "8.0.16"
+    "tesseract.js": "^6.0.1",
+    "vite": "8.0.16",
+    "vite-plugin-pwa": "^1.1.0"
   },
   "devDependencies": {}
 }

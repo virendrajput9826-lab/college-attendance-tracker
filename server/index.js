@@ -1,12 +1,13 @@
 import express from 'express';
 import * as pdfParseModule from 'pdf-parse';
 import * as cheerio from 'cheerio';
+import Tesseract from 'tesseract.js';
 import { addDays, format } from 'date-fns';
 
 const app = express();
 const PORT = 4174;
 
-app.use(express.json());
+app.use(express.json({ limit: '20mb' }));
 app.use((_, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -315,6 +316,90 @@ function parseSlots(text, profile) {
   ];
 }
 
+function buildCandidateFromText(text, profile, source) {
+  const calendar = parseSemesterDates(text);
+  const holidays = parseHolidays(text);
+  const slots = parseSlots(text, profile).map((slot) => ({
+    ...slot,
+    activeFrom: slot.activeFrom || calendar.semesterStart
+  }));
+
+  return {
+    discoveredSources: [
+      {
+        id: source.id,
+        label: source.label,
+        detail: source.detail,
+        confidence: source.confidence,
+        url: source.url
+      }
+    ],
+    rankedCandidates: [
+      {
+        type: source.type,
+        title: source.label,
+        source: source.url,
+        confidence: source.confidence
+      }
+    ],
+    candidate: {
+      confidence: source.confidence,
+      sources: [
+        {
+          type: source.type,
+          title: source.label,
+          source: source.url,
+          confidence: source.confidence
+        }
+      ],
+      calendar,
+      holidays,
+      slots
+    }
+  };
+}
+
+async function extractUploadText({ fileName, mimeType, contentBase64 }) {
+  const buffer = Buffer.from(contentBase64, 'base64');
+  const lowerName = String(fileName || '').toLowerCase();
+  const normalizedType = String(mimeType || '').toLowerCase();
+
+  if (normalizedType.includes('pdf') || lowerName.endsWith('.pdf')) {
+    const parsed = await pdfParse(buffer);
+    return {
+      text: parsed.text || '',
+      sourceType: 'Timetable',
+      parser: 'PDF text extraction'
+    };
+  }
+
+  if (normalizedType.startsWith('image/')) {
+    const result = await Tesseract.recognize(buffer, 'eng');
+    return {
+      text: result.data?.text || '',
+      sourceType: 'Timetable',
+      parser: 'Local OCR'
+    };
+  }
+
+  const rawText = buffer.toString('utf8');
+  if (normalizedType.includes('html') || lowerName.endsWith('.html') || lowerName.endsWith('.htm')) {
+    const $ = cheerio.load(rawText);
+    $('script, style, noscript').remove();
+    return {
+      text: normalizeText($('body').text()),
+      sourceType: 'Calendar',
+      parser: 'HTML text extraction'
+    };
+  }
+
+  return {
+    text: normalizeText(rawText),
+    sourceType: 'Timetable',
+    parser: 'Plain text extraction'
+  };
+}
+
 async function searchWeb(profile) {
   const query = encodeURIComponent(
     `${profile.collegeName} ${profile.course} ${profile.branch} ${profile.semester} timetable academic calendar`
@@ -411,6 +496,41 @@ app.post('/api/extract', async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       error: error instanceof Error ? error.message : 'Extraction failed.'
+    });
+  }
+});
+
+app.post('/api/extract/upload', async (req, res) => {
+  const profile = req.body?.profile || {};
+  const fileName = req.body?.fileName || '';
+  const mimeType = req.body?.mimeType || '';
+  const contentBase64 = req.body?.contentBase64 || '';
+
+  if (!fileName || !contentBase64) {
+    return res.status(400).json({ error: 'Missing upload file payload.' });
+  }
+
+  try {
+    const extracted = await extractUploadText({ fileName, mimeType, contentBase64 });
+    if (!normalizeText(extracted.text)) {
+      return res.status(422).json({
+        error: 'The uploaded file did not produce usable text. Try a clearer PDF or image.'
+      });
+    }
+
+    return res.json(
+      buildCandidateFromText(extracted.text, profile, {
+        id: `upload-${fileName}`,
+        label: fileName,
+        detail: extracted.parser,
+        confidence: extracted.parser === 'Local OCR' ? 72 : 84,
+        url: `Uploaded file: ${fileName}`,
+        type: extracted.sourceType
+      })
+    );
+  } catch (error) {
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : 'Upload extraction failed.'
     });
   }
 });

@@ -1,53 +1,66 @@
 # College Attendance Tracker
 
-A local-first college attendance tracker that tries to fetch a student's timetable and academic calendar from the web, then lets the student track lecture-wise attendance and attendance risk.
+A mobile-friendly local-first attendance tracker built with React, Vite, and PWA support.
 
 ## What It Does
 
-- Collects student setup details:
-  - college name
-  - course
-  - branch
-  - semester
-  - section
-- Attempts live web extraction for:
-  - official college sources
-  - timetable candidates
-  - academic calendar candidates
-  - semester dates
-  - holiday/no-class dates
-- Lets the user review extracted data before generating lecture sessions
-- Generates lecture sessions from weekly timetable plus semester calendar
-- Supports:
-  - lecture-wise attendance marking
-  - subject-wise attendance
-  - overall attendance
-  - holidays
-  - extra classes
-  - cancelled classes
+- stores student attendance data locally in the browser
+- supports weekly timetable setup and semester date ranges
+- generates lecture sessions from timetable slots
+- tracks present/absent attendance per lecture
+- shows overall and subject-wise attendance status
+- supports upload-based timetable extraction with editable review
+- supports web-based college timetable/calendar discovery
 
-## Stack
+## Current Architecture
 
 - Frontend: React + Vite
-- Backend: Node.js + Express
-- Parsing:
-  - Cheerio for HTML parsing
-  - pdf-parse for PDF text extraction
-- Date logic: date-fns
+- Local storage layer: Dexie / IndexedDB foundation
+- PWA: `vite-plugin-pwa`
+- Serverless extraction endpoint: `api/extract.js`
+- Optional rate limit: Upstash Redis
+
+## Vision Provider Support
+
+Upload extraction can use user-supplied API credentials for:
+
+- Anthropic
+- OpenAI
+- Google Gemini
+
+The user can choose:
+
+- provider
+- model
+- API key
+
+inside the setup screen before running upload extraction.
 
 ## Project Structure
 
 ```text
 .
+├── api/
+│   └── extract.js
 ├── public/
-├── server/
-│   └── index.js
+│   ├── icon.svg
+│   └── manifest.json
 ├── src/
+│   ├── App.jsx
 │   ├── main.jsx
-│   └── styles.css
+│   ├── styles.css
+│   ├── db/
+│   │   └── db.js
+│   ├── extraction/
+│   │   ├── visionExtract.js
+│   │   └── webSearch.js
+│   └── logic/
+│       ├── attendanceCalc.js
+│       └── slotGenerator.js
 ├── index.html
 ├── package.json
-└── README.md
+├── vercel.json
+└── vite.config.js
 ```
 
 ## Run Locally
@@ -58,13 +71,7 @@ Install dependencies:
 npm install
 ```
 
-Start the extraction backend:
-
-```bash
-npm run server
-```
-
-Start the frontend:
+Start the app:
 
 ```bash
 npm run dev
@@ -73,59 +80,33 @@ npm run dev
 Open:
 
 - App: `http://127.0.0.1:5173/`
-- Extraction API: `http://localhost:4174/api/extract`
 
-## GitHub Pages Demo
+## Build
 
-This repo also supports a static public demo on GitHub Pages.
+```bash
+npm run build
+```
 
-- The Pages build does not run the Node extraction backend
-- It uses a built-in demo extraction response so anyone can open the tracker UI
-- The attendance flow, timetable review, lecture generation, and dashboard remain interactive
+This generates the production build and PWA service worker.
 
-Expected Pages URL:
+## Deploy To Vercel
 
-- `https://virendrajput9826-lab.github.io/college-attendance-tracker/`
+1. Push this repo to GitHub
+2. Import the repo into Vercel
+3. Deploy
 
-## Current Behavior
+Optional environment variables for rate limiting:
 
-The local app performs real web fetching through the backend. It does not rely only on mocked UI steps anymore.
+- `UPSTASH_REDIS_REST_URL`
+- `UPSTASH_REDIS_REST_TOKEN`
 
-Current extraction flow:
+There is no required provider API key in Vercel if you want end users to bring their own key in the UI.
 
-1. Search for likely timetable/calendar pages using the setup details
-2. Fetch candidate HTML pages or PDFs
-3. Rank sources
-4. Extract timetable slots, semester dates, and holidays
-5. Ask the user to review before generating lecture sessions
+## Notes
 
-For GitHub Pages only:
-
-1. The app switches to static demo mode
-2. It shows a demo extraction result instead of calling the backend
-3. This keeps the public link usable without a server
-
-## Current Limitations
-
-- Extraction is real, but heuristics are still basic
-- Some colleges may return weak or partial timetable/calendar data
-- Official timetable formats differ a lot across institutions
-- College-specific parsers are not implemented yet
-- API integrations for official institutional systems are not implemented yet
-
-## Recommended Next Improvements
-
-- Add college-specific source filters and parsers
-- Add PDF-first handling for academic calendar documents
-- Add OCR path for image/scanned timetable uploads
-- Add confidence scoring per extracted field
-- Add persistence using SQLite instead of only frontend local storage
-
-## Scripts
-
-- `npm run dev` - start frontend
-- `npm run server` - start extraction backend
-- `npm run build` - production build
+- The old local Express backend still exists in `server/index.js` for local experimentation, but Vercel deployment uses `api/extract.js`
+- Upload extraction is the main path that uses provider/model/API key selection
+- Web extraction does not require a vision API key
 
 ## License
 

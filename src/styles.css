@@ -420,6 +420,10 @@ select {
   gap: 12px;
 }
 
+.full-span {
+  grid-column: 1 / -1;
+}
+
 label {
   color: #4a5551;
   font-size: 13px;
@@ -513,6 +517,23 @@ label {
   text-align: left;
 }
 
+.mode-upload-button {
+  min-height: 68px;
+  border: 1px solid #dfe7e2;
+  background: #f8faf8;
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mode-upload-button input {
+  display: none;
+}
+
 .mode-list strong,
 .mode-list small {
   display: block;
@@ -532,6 +553,11 @@ label {
   background: #fff7ed;
   color: #8a3c0b;
   border-radius: 8px;
+}
+
+.notice.subtle {
+  background: #eef4f1;
+  color: #31514b;
 }
 
 
@@ -678,6 +704,75 @@ label {
   flex-wrap: wrap;
   margin-top: 16px;
 }
+
+.editable-review-table {
+  display: grid;
+  gap: 8px;
+}
+
+.editable-review-header,
+.editable-review-row {
+  display: grid;
+  grid-template-columns: 100px 92px 92px minmax(140px, 1fr) 110px 96px 40px;
+  gap: 8px;
+  align-items: center;
+}
+
+.editable-review-header {
+  padding: 0 4px;
+  color: #5f6c67;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.editable-review-row {
+  padding: 10px;
+  border-radius: 8px;
+  background: #f8faf8;
+  border: 1px solid #dfe7e2;
+}
+
+.editable-review-row input,
+.editable-review-row select,
+.calendar-edit-grid input,
+.holiday-row input {
+  width: 100%;
+}
+
+.review-add-button {
+  margin-top: 10px;
+}
+
+.calendar-edit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.calendar-edit-grid label {
+  display: grid;
+  gap: 6px;
+  color: #33413d;
+  font-size: 13px;
+}
+
+.holiday-editor {
+  display: grid;
+  gap: 8px;
+}
+
+.holiday-row {
+  display: grid;
+  grid-template-columns: 136px minmax(140px, 1fr) 40px;
+  gap: 8px;
+  align-items: center;
+  padding: 10px;
+  border-radius: 8px;
+  background: #f8faf8;
+  border: 1px solid #dfe7e2;
+}
+
 .empty-state {
   min-height: 96px;
   display: grid;
@@ -755,7 +850,11 @@ label {
   .form-grid,
   .slot-editor,
   .review-row,
-  .inline-form {
+  .inline-form,
+  .editable-review-header,
+  .editable-review-row,
+  .holiday-row,
+  .calendar-edit-grid {
     grid-template-columns: 1fr;
   }
 
